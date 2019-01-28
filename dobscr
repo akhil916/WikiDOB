@@ -1,0 +1,37 @@
+import bs4, requests, csv
+
+mylist = [] #list that stores all the DOBs to write to excel
+def wikidob(artist_name):
+   headers = {
+   'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36',} #To not let a website deny access to scraping 
+   res = requests.get(artist_name)
+   soup = bs4.BeautifulSoup(res.text, 'html.parser')
+   try:
+      elems = soup.find_all(class_ = "bday") #Calling by classname, all wikipedia dates are given the class 'bday'
+      return elems[0].text.strip()
+   except:
+      print('No DOB found') #An exception raised in case the page doesn't have bday class
+
+with open('example1.csv', 'r') as wb: #reading the excel file containing the data
+   readCSV = csv.reader(wb)
+
+   for artist in readCSV:
+    
+      name = repr(artist).replace(' ', '_') #replacing empty space bw names to '_' because of how wiki names its pages
+      name = " ".join(map(str,artist[0:1])) #remove printing each element as a list and taking the first column of the spreadsheet
+      if not name:
+         print('')                          #take empty string instead of default value None in case the data doesn't match the above pattern
+      else:
+         r = requests.get('https://en.wikipedia.org/wiki/' + name)
+         if r.status_code == 200:                                    #Server code 200 stands for "Okay" which makes sure the URL exists
+            dob = wikidob('https://en.wikipedia.org/wiki/' + name)
+            mylist.append(dob)
+            print(mylist)
+         else:
+            print('URL not found')
+            mylist.append(" ")
+with open('example2.csv', 'w', newline = '') as myfile:  #writing the results to a new Excel sheet
+   wr = csv.writer(myfile)
+   for word in mylist:
+      wr.writerow([word[0:]])
+
